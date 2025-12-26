@@ -3,90 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ thống Kiểm tra Trắc nghiệm</title>
+    <title>Hệ Thống Trộn Đề Tự Động</title>
     <style>
         :root { --primary: #2563eb; --success: #22c55e; --error: #ef4444; --bg: #f8fafc; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); line-height: 1.6; padding: 20px; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h1, h2 { color: #1e293b; text-align: center; }
-        .section-title { background: #e2e8f0; padding: 10px; border-radius: 6px; margin-top: 25px; }
-        .question { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9; }
-        .options { list-style: none; padding: 0; }
-        .option { margin: 8px 0; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; transition: 0.2s; }
-        .option:hover { background: #f1f5f9; }
-        .result-box { display: none; text-align: center; padding: 20px; border: 2px solid var(--primary); border-radius: 10px; margin-top: 20px; }
-        .review-section { margin-top: 30px; display: none; }
-        .correct { background: #dcfce7 !important; border-color: var(--success); }
-        .wrong { background: #fee2e2 !important; border-color: var(--error); }
-        button { display: block; width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 1.1rem; cursor: pointer; margin-top: 20px; }
-        button:hover { background: #1d4ed8; }
-        .badge { font-size: 0.8rem; font-weight: bold; padding: 2px 8px; border-radius: 4px; margin-bottom: 5px; display: inline-block; }
-        .badge-s1 { background: #dbeafe; color: #1e40af; }
-        .badge-s2 { background: #fef3c7; color: #92400e; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; color: #1e293b; }
+        .container { max-width: 850px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .header { text-align: center; border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; }
+        .section-header { background: #eff6ff; padding: 10px 15px; border-radius: 8px; margin: 25px 0 15px; border-left: 5px solid var(--primary); font-weight: bold; }
+        .question-item { margin-bottom: 30px; padding: 15px; border-radius: 10px; border: 1px solid #f1f5f9; transition: 0.3s; }
+        .question-item:hover { border-color: #cbd5e1; }
+        .options-grid { display: grid; gap: 10px; margin-top: 10px; }
+        .option-label { display: flex; align-items: center; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .option-label:hover { background: #f8fafc; }
+        input[type="radio"], input[type="checkbox"] { margin-right: 12px; width: 18px; height: 18px; }
+        .btn-submit { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-top: 30px; }
+        .btn-submit:hover { background: #1d4ed8; }
+        .result-area { display: none; margin-top: 30px; padding: 20px; border-radius: 10px; background: #f0fdf4; border: 2px solid var(--success); text-align: center; }
+        .review-area { display: none; margin-top: 30px; }
+        .status-tag { font-size: 0.75rem; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; margin-bottom: 8px; display: inline-block; font-weight: bold; }
+        .tag-s1 { background: #dcfce7; color: #166534; }
+        .tag-s2 { background: #fef3c7; color: #92400e; }
+        .correct-ans { color: var(--success); font-weight: bold; }
+        .wrong-ans { color: var(--error); font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Bài Kiểm Tra Trắc Nghiệm</h1>
-    <div id="quiz-container">
-        </div>
-    <button onclick="calculateScore()">Nộp bài & Xem kết quả</button>
-
-    <div id="result" class="result-box">
-        <h2>Kết Quả Của Bạn</h2>
-        <p id="score-text" style="font-size: 1.5rem; font-weight: bold;"></p>
-        <p id="stats-text"></p>
+    <div class="header">
+        <h1>BÀI KIỂM TRA TỔNG HỢP</h1>
+        <p>Hệ thống tự động lấy ngẫu nhiên 16 câu từ ngân hàng đề</p>
     </div>
 
-    <div id="review" class="review-section">
-        <h3>Xem lại đáp án</h3>
+    <div id="quiz-form">
+        <div id="quiz-content"></div>
+        <button class="btn-submit" onclick="gradeQuiz()">NỘP BÀI XEM KẾT QUẢ</button>
+    </div>
+
+    <div id="result" class="result-area">
+        <h2 id="score-val">0/10 Điểm</h2>
+        <p id="stats-val">Đúng 0/16 câu</p>
+        <button onclick="location.reload()" style="background:none; border:1px solid #ccc; cursor:pointer; padding:5px 10px; border-radius:5px;">Làm đề mới</button>
+    </div>
+
+    <div id="review" class="review-area">
+        <hr>
+        <h3>Chi tiết đáp án:</h3>
         <div id="review-content"></div>
     </div>
 </div>
 
 <script>
-// Dữ liệu câu hỏi
-const questions = [
-    // PHẦN 1: 12 câu 1 đáp án đúng
-    ...Array.from({length: 12}, (_, i) => ({
-        id: i + 1,
-        type: 'single',
-        question: `Câu hỏi số ${i + 1}: Thủ đô của Việt Nam là gì?`,
-        options: ['TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Cần Thơ'],
-        answer: 1 // Chỉ số của đáp án đúng (Hà Nội)
-    })),
-    // PHẦN 2: 4 câu nhiều đáp án đúng
-    ...Array.from({length: 4}, (_, i) => ({
-        id: i + 13,
-        type: 'multi',
-        question: `Câu hỏi số ${i + 13}: Những thành phố nào trực thuộc trung ương? (Chọn nhiều đáp án)`,
-        options: ['Hà Nội', 'Hải Phòng', 'Đà Lạt', 'Cần Thơ'],
-        answer: [0, 1, 3] // Danh sách chỉ số các đáp án đúng
-    }))
+// --- NGÂN HÀNG DỮ LIỆU ---
+const DATA_PHAN_1 = [
+    { q: "Câu hỏi 1: 1+1 bằng mấy?", a: ["2", "3", "4", "5"], c: 0 },
+    { q: "Câu hỏi 2: Thủ đô Pháp?", a: ["Hà Nội", "Paris", "London", "Tokyo"], c: 1 },
+    // ... Bạn copy thêm cho đủ 50 câu vào đây
 ];
 
+const DATA_PHAN_2 = [
+    { q: "Chọn các số chẵn:", a: ["2", "3", "4", "6"], c: [0, 2, 3] },
+    { q: "Các trình duyệt web là:", a: ["Chrome", "Facebook", "Firefox", "Word"], c: [0, 2] },
+    // ... Bạn copy thêm cho đủ 20 câu vào đây
+];
+
+// Thêm dữ liệu mẫu để code chạy được ngay
+for(let i=3; i<=50; i++) DATA_PHAN_1.push({q: `Câu hỏi mẫu P1 số ${i}`, a: ["Đúng", "Sai 1", "Sai 2", "Sai 3"], c: 0});
+for(let i=3; i<=20; i++) DATA_PHAN_2.push({q: `Câu hỏi mẫu P2 số ${i}`, a: ["Đúng A", "Đúng B", "Sai C", "Đúng D"], c: [0,1,3]});
+
+let currentQuiz = [];
+
+// Hàm trộn mảng (Fisher-Yates)
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function initQuiz() {
+    // 1. Lấy ngẫu nhiên 12 câu P1 và 4 câu P2
+    const p1 = shuffle([...DATA_PHAN_1]).slice(0, 12);
+    const p2 = shuffle([...DATA_PHAN_2]).slice(0, 4);
+
+    // 2. Trộn đáp án trong từng câu
+    currentQuiz = [...p1, ...p2].map((item, idx) => {
+        const isMulti = Array.isArray(item.c);
+        
+        // Tạo mảng object để giữ vết đáp án đúng sau khi trộn
+        let optionsWithMeta = item.a.map((text, i) => ({
+            text: text,
+            isCorrect: isMulti ? item.c.includes(i) : i === item.c
+        }));
+        
+        shuffle(optionsWithMeta);
+        
+        return {
+            question: item.q,
+            type: isMulti ? 'multi' : 'single',
+            options: optionsWithMeta
+        };
+    });
+
+    renderQuiz();
+}
+
 function renderQuiz() {
-    const container = document.getElementById('quiz-container');
+    const container = document.getElementById('quiz-content');
     let html = '';
 
-    questions.forEach((q, index) => {
-        if (index === 0) html += `<h3 class="section-title">Phần 1: Trắc nghiệm một lựa chọn (12 câu)</h3>`;
-        if (index === 12) html += `<h3 class="section-title">Phần 2: Trắc nghiệm nhiều lựa chọn (4 câu)</h3>`;
+    currentQuiz.forEach((q, qIdx) => {
+        if (qIdx === 0) html += `<div class="section-header">PHẦN 1: CHỌN 1 ĐÁP ÁN ĐÚNG</div>`;
+        if (qIdx === 12) html += `<div class="section-header">PHẦN 2: CHỌN NHIỀU ĐÁP ÁN ĐÚNG</div>`;
 
         html += `
-            <div class="question" id="q-container-${index}">
-                <span class="badge ${q.type === 'single' ? 'badge-s1' : 'badge-s2'}">
-                    ${q.type === 'single' ? 'Một đáp án' : 'Nhiều đáp án'}
-                </span>
-                <p><strong>Câu ${q.id}:</strong> ${q.question}</p>
-                <div class="options">
-                    ${q.options.map((opt, i) => `
-                        <div class="option">
+            <div class="question-item">
+                <div class="status-tag ${q.type === 'single' ? 'tag-s1' : 'tag-s2'}">
+                    Câu ${qIdx + 1} - ${q.type === 'single' ? 'Một đáp án' : 'Nhiều đáp án'}
+                </div>
+                <div><strong>${q.question}</strong></div>
+                <div class="options-grid">
+                    ${q.options.map((opt, oIdx) => `
+                        <label class="option-label">
                             <input type="${q.type === 'single' ? 'radio' : 'checkbox'}" 
-                                   name="q${index}" id="q${index}o${i}" value="${i}">
-                            <label for="q${index}o${i}">${opt}</label>
-                        </div>
+                                   name="q${qIdx}" value="${oIdx}">
+                            ${opt.text}
+                        </label>
                     `).join('')}
                 </div>
             </div>
@@ -95,59 +138,48 @@ function renderQuiz() {
     container.innerHTML = html;
 }
 
-function calculateScore() {
-    let score = 0;
-    let correctCount = 0;
+function gradeQuiz() {
+    let correctTotal = 0;
+    let reviewHtml = '';
 
-    questions.forEach((q, index) => {
-        const selected = Array.from(document.querySelectorAll(`input[name="q${index}"]:checked`))
-                              .map(el => parseInt(el.value));
+    currentQuiz.forEach((q, qIdx) => {
+        const selectedIndexes = Array.from(document.querySelectorAll(`input[name="q${qIdx}"]:checked`))
+                                     .map(el => parseInt(el.value));
+        
+        const correctIndexes = q.options.map((opt, i) => opt.isCorrect ? i : null).filter(i => i !== null);
         
         let isCorrect = false;
         if (q.type === 'single') {
-            isCorrect = selected.length === 1 && selected[0] === q.answer;
+            isCorrect = selectedIndexes.length === 1 && q.options[selectedIndexes[0]].isCorrect;
         } else {
-            isCorrect = JSON.stringify(selected.sort()) === JSON.stringify(q.answer.sort());
+            isCorrect = JSON.stringify(selectedIndexes.sort()) === JSON.stringify(correctIndexes.sort());
         }
 
-        if (isCorrect) {
-            score += (10 / questions.length);
-            correctCount++;
-        }
+        if (isCorrect) correctTotal++;
+
+        // Chuẩn bị nội dung review
+        reviewHtml += `
+            <div style="margin-bottom:15px; border-bottom:1px dashed #ccc; padding-bottom:10px;">
+                <p><strong>Câu ${qIdx + 1}:</strong> ${isCorrect ? '✅ Đúng' : '❌ Sai'}</p>
+                <p>Đáp án đúng: <span class="correct-ans">${correctIndexes.map(i => q.options[i].text).join(', ')}</span></p>
+            </div>
+        `;
     });
 
-    // Hiển thị kết quả
+    const finalScore = (correctTotal / currentQuiz.length) * 10;
+    
+    document.getElementById('quiz-form').style.display = 'none';
     document.getElementById('result').style.display = 'block';
-    document.getElementById('score-text').innerText = `Điểm số: ${score.toFixed(2)} / 10`;
-    document.getElementById('stats-text').innerText = `Số câu đúng: ${correctCount} / ${questions.length}`;
+    document.getElementById('review').style.display = 'block';
     
-    showReview();
+    document.getElementById('score-val').innerText = `${finalScore.toFixed(1)} / 10 Điểm`;
+    document.getElementById('stats-val').innerText = `Bạn làm đúng ${correctTotal} trên tổng số ${currentQuiz.length} câu`;
+    document.getElementById('review-content').innerHTML = reviewHtml;
+    
+    window.scrollTo(0, 0);
 }
 
-function showReview() {
-    const reviewSection = document.getElementById('review');
-    const reviewContent = document.getElementById('review-content');
-    reviewSection.style.display = 'block';
-    
-    let reviewHtml = '';
-    questions.forEach((q, index) => {
-        const selected = Array.from(document.querySelectorAll(`input[name="q${index}"]:checked`))
-                              .map(el => parseInt(el.value));
-        
-        reviewHtml += `<div style="margin-bottom: 20px; border-left: 4px solid #ddd; padding-left: 15px;">
-            <p><strong>Câu ${q.id}:</strong> ${q.question}</p>
-            <p>Đáp án đúng: <span style="color: var(--success)">${
-                q.type === 'single' ? q.options[q.answer] : q.answer.map(i => q.options[i]).join(', ')
-            }</span></p>
-            <p>Bạn chọn: <span style="color: ${selected.length > 0 ? 'black' : 'red'}">${
-                selected.length > 0 ? selected.map(i => q.options[i]).join(', ') : 'Chưa trả lời'
-            }</span></p>
-        </div>`;
-    });
-    reviewContent.innerHTML = reviewHtml;
-}
-
-renderQuiz();
+window.onload = initQuiz;
 </script>
 </body>
 </html>

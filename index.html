@@ -1,25 +1,153 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-  <meta charset="utf-8">
-  <title>AR Hiro Demo</title>
-
-  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/2.2.1/aframe/build/aframe-ar.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Kiểm tra Trắc nghiệm</title>
+    <style>
+        :root { --primary: #2563eb; --success: #22c55e; --error: #ef4444; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); line-height: 1.6; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1, h2 { color: #1e293b; text-align: center; }
+        .section-title { background: #e2e8f0; padding: 10px; border-radius: 6px; margin-top: 25px; }
+        .question { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9; }
+        .options { list-style: none; padding: 0; }
+        .option { margin: 8px 0; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .option:hover { background: #f1f5f9; }
+        .result-box { display: none; text-align: center; padding: 20px; border: 2px solid var(--primary); border-radius: 10px; margin-top: 20px; }
+        .review-section { margin-top: 30px; display: none; }
+        .correct { background: #dcfce7 !important; border-color: var(--success); }
+        .wrong { background: #fee2e2 !important; border-color: var(--error); }
+        button { display: block; width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 1.1rem; cursor: pointer; margin-top: 20px; }
+        button:hover { background: #1d4ed8; }
+        .badge { font-size: 0.8rem; font-weight: bold; padding: 2px 8px; border-radius: 4px; margin-bottom: 5px; display: inline-block; }
+        .badge-s1 { background: #dbeafe; color: #1e40af; }
+        .badge-s2 { background: #fef3c7; color: #92400e; }
+    </style>
 </head>
-
 <body>
-  <a-scene embedded arjs="sourceType: webcam;">
 
-    <!-- GẮN HIRO -->
-    <a-marker preset="hiro">
+<div class="container">
+    <h1>Bài Kiểm Tra Trắc Nghiệm</h1>
+    <div id="quiz-container">
+        </div>
+    <button onclick="calculateScore()">Nộp bài & Xem kết quả</button>
 
-      <!-- VẬT THỂ -->
-      <a-box position="0 0.5 0" color="red"></a-box>
+    <div id="result" class="result-box">
+        <h2>Kết Quả Của Bạn</h2>
+        <p id="score-text" style="font-size: 1.5rem; font-weight: bold;"></p>
+        <p id="stats-text"></p>
+    </div>
 
-    </a-marker>
+    <div id="review" class="review-section">
+        <h3>Xem lại đáp án</h3>
+        <div id="review-content"></div>
+    </div>
+</div>
 
-    <a-entity camera></a-entity>
-  </a-scene>
+<script>
+// Dữ liệu câu hỏi
+const questions = [
+    // PHẦN 1: 12 câu 1 đáp án đúng
+    ...Array.from({length: 12}, (_, i) => ({
+        id: i + 1,
+        type: 'single',
+        question: `Câu hỏi số ${i + 1}: Thủ đô của Việt Nam là gì?`,
+        options: ['TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Cần Thơ'],
+        answer: 1 // Chỉ số của đáp án đúng (Hà Nội)
+    })),
+    // PHẦN 2: 4 câu nhiều đáp án đúng
+    ...Array.from({length: 4}, (_, i) => ({
+        id: i + 13,
+        type: 'multi',
+        question: `Câu hỏi số ${i + 13}: Những thành phố nào trực thuộc trung ương? (Chọn nhiều đáp án)`,
+        options: ['Hà Nội', 'Hải Phòng', 'Đà Lạt', 'Cần Thơ'],
+        answer: [0, 1, 3] // Danh sách chỉ số các đáp án đúng
+    }))
+];
+
+function renderQuiz() {
+    const container = document.getElementById('quiz-container');
+    let html = '';
+
+    questions.forEach((q, index) => {
+        if (index === 0) html += `<h3 class="section-title">Phần 1: Trắc nghiệm một lựa chọn (12 câu)</h3>`;
+        if (index === 12) html += `<h3 class="section-title">Phần 2: Trắc nghiệm nhiều lựa chọn (4 câu)</h3>`;
+
+        html += `
+            <div class="question" id="q-container-${index}">
+                <span class="badge ${q.type === 'single' ? 'badge-s1' : 'badge-s2'}">
+                    ${q.type === 'single' ? 'Một đáp án' : 'Nhiều đáp án'}
+                </span>
+                <p><strong>Câu ${q.id}:</strong> ${q.question}</p>
+                <div class="options">
+                    ${q.options.map((opt, i) => `
+                        <div class="option">
+                            <input type="${q.type === 'single' ? 'radio' : 'checkbox'}" 
+                                   name="q${index}" id="q${index}o${i}" value="${i}">
+                            <label for="q${index}o${i}">${opt}</label>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function calculateScore() {
+    let score = 0;
+    let correctCount = 0;
+
+    questions.forEach((q, index) => {
+        const selected = Array.from(document.querySelectorAll(`input[name="q${index}"]:checked`))
+                              .map(el => parseInt(el.value));
+        
+        let isCorrect = false;
+        if (q.type === 'single') {
+            isCorrect = selected.length === 1 && selected[0] === q.answer;
+        } else {
+            isCorrect = JSON.stringify(selected.sort()) === JSON.stringify(q.answer.sort());
+        }
+
+        if (isCorrect) {
+            score += (10 / questions.length);
+            correctCount++;
+        }
+    });
+
+    // Hiển thị kết quả
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('score-text').innerText = `Điểm số: ${score.toFixed(2)} / 10`;
+    document.getElementById('stats-text').innerText = `Số câu đúng: ${correctCount} / ${questions.length}`;
+    
+    showReview();
+}
+
+function showReview() {
+    const reviewSection = document.getElementById('review');
+    const reviewContent = document.getElementById('review-content');
+    reviewSection.style.display = 'block';
+    
+    let reviewHtml = '';
+    questions.forEach((q, index) => {
+        const selected = Array.from(document.querySelectorAll(`input[name="q${index}"]:checked`))
+                              .map(el => parseInt(el.value));
+        
+        reviewHtml += `<div style="margin-bottom: 20px; border-left: 4px solid #ddd; padding-left: 15px;">
+            <p><strong>Câu ${q.id}:</strong> ${q.question}</p>
+            <p>Đáp án đúng: <span style="color: var(--success)">${
+                q.type === 'single' ? q.options[q.answer] : q.answer.map(i => q.options[i]).join(', ')
+            }</span></p>
+            <p>Bạn chọn: <span style="color: ${selected.length > 0 ? 'black' : 'red'}">${
+                selected.length > 0 ? selected.map(i => q.options[i]).join(', ') : 'Chưa trả lời'
+            }</span></p>
+        </div>`;
+    });
+    reviewContent.innerHTML = reviewHtml;
+}
+
+renderQuiz();
+</script>
 </body>
 </html>
